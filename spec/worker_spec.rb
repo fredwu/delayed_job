@@ -59,6 +59,7 @@ describe Delayed::Worker do
 
       job_create(:priority => -10)
       job_create(:priority => 0)
+      
       @worker.work_off
 
       SimpleJob.runs.should == 1
