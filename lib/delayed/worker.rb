@@ -3,10 +3,11 @@ require 'timeout'
 
 module Delayed
   class Worker
-    cattr_accessor :min_priority, :max_priority, :max_attempts, :max_run_time, :sleep_delay, :logger
-    self.sleep_delay = 5
-    self.max_attempts = 25
-    self.max_run_time = 4.hours
+    cattr_accessor :min_priority, :max_priority, :max_attempts, :max_run_time, :run_interval, :sleep_delay, :logger
+    self.run_interval = 0
+    self.sleep_delay   = 5
+    self.max_attempts  = 25
+    self.max_run_time  = 4.hours
     
     # By default failed jobs are destroyed after too many attempts. If you want to keep them around
     # (perhaps to inspect the reason for the failure), set this to false.
@@ -115,6 +116,10 @@ module Delayed
     rescue Exception => e
       handle_failed_job(job, e)
       return false  # work failed
+    end
+    
+    def self.run_at_set_interval
+      self.run_interval.seconds.since(Delayed::Job.last.run_at) if Delayed::Job.count > 0
     end
     
     # Reschedule the job in the future (when a job fails).

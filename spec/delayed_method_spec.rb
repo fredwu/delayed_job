@@ -54,6 +54,27 @@ describe 'random ruby objects' do
       job.payload_object.args.should    == ['r']
       job.payload_object.perform.should == 1
     end
+    
+    it "should run the first job immediately after the worker is waken up" do
+      "string".send_later :count
+      Delayed::Job.find(:first).run_at.to_s.should == Time.now.to_s
+    end
+    
+    it "should schedule a job based on last job's run_at time using the run_interval parameter" do
+      Delayed::Worker.run_interval = 60
+      
+      "string".send_later :count
+      "string".send_later :count
+      
+      Delayed::Job.count.should == 2
+      
+      job1 = Delayed::Job.find(:first)
+      job2 = Delayed::Job.find(:last)
+      
+      (job2.run_at - job1.run_at).should == Delayed::Worker.run_interval
+      
+      Delayed::Worker.run_interval = 0
+    end
   end
 
 end

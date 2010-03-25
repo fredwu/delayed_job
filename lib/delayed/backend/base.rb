@@ -17,7 +17,7 @@ module Delayed
           end
     
           priority = args.first || 0
-          run_at   = args[1]
+          run_at   = args[1] || Delayed::Worker.run_at_set_interval
           self.create(:payload_object => object, :priority => priority.to_i, :run_at => run_at)
         end
       end
