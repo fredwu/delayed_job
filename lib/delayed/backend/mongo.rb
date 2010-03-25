@@ -99,11 +99,6 @@ module Delayed
         def make_query(string)
           self.class.make_query(string)
         end
-      
-      
-        def set_default_run_at
-          self.run_at ||= self.class.db_time_now
-        end
       end
     end
   end
