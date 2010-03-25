@@ -3,6 +3,7 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'rubygems'
 require 'spec'
 require 'active_record'
+require 'logger'
 require 'delayed_job'
 
 logger = Logger.new('/tmp/dj.log')
