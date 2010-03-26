@@ -1,7 +1,11 @@
 require 'spec_helper'
 
 describe 'random ruby objects' do
-  before       { Delayed::Job.delete_all }
+  before do
+    Delayed::Job.delete_all
+    Delayed::Meta.delete_all
+    Delayed::Worker.run_interval = 0
+  end
 
   it "should respond_to :send_later method" do
     Object.new.respond_to?(:send_later)
@@ -27,13 +31,44 @@ describe 'random ruby objects' do
     story.whatever(1, 5)
   
     Delayed::Job.count.should == 1
-    job =  Delayed::Job.first
+    job = Delayed::Job.first
     job.payload_object.class.should   == Delayed::PerformableMethod
     job.payload_object.method.should  == :whatever_without_send_later
     job.payload_object.args.should    == [1, 5]
     job.payload_object.perform.should == 'Once upon...'
   end
-
+  
+  it "should run the first job immediately after the worker is waken up" do
+    "string".send_later :count
+    Delayed::Job.first.run_at.to_s.should == Time.now.to_s
+  end
+  
+  context "last_run_at" do
+    before do
+      @time_now = Delayed::Job.db_time_now
+      @run_interval = Delayed::Worker.run_interval = 2
+      @last_run_at  = @time_now + @run_interval - 1
+      Delayed::Meta.create(:last_run_at => @last_run_at)
+    end
+    
+    it "should run at the correct time if being run before last_run_at" do
+      "string".send_later :count
+      Delayed::Meta.first.last_run_at.to_s.should == (@last_run_at + @run_interval).to_s
+    end
+    
+    it "should run at the correct time if being run after last_run_at but within the run interval" do
+      Time.stub!(:now).and_return(@time_now + @run_interval)
+      "string".send_later :count
+      Delayed::Meta.first.last_run_at.to_s.should == (@last_run_at + @run_interval).to_s
+    end
+    
+    it "should run immediately if being run after last_run_at" do
+      Time.stub!(:now).and_return(@time_now + @run_interval * 2)
+      "string".send_later :count
+      Delayed::Meta.first.last_run_at.to_s.should == Delayed::Job.last.run_at.to_s
+    end
+  end
+  
   context "send_at" do
     it "should queue a new job" do
       lambda do
@@ -53,27 +88,6 @@ describe 'random ruby objects' do
       job.payload_object.method.should  == :count
       job.payload_object.args.should    == ['r']
       job.payload_object.perform.should == 1
-    end
-    
-    it "should run the first job immediately after the worker is waken up" do
-      "string".send_later :count
-      Delayed::Job.find(:first).run_at.to_s.should == Time.now.to_s
-    end
-    
-    it "should schedule a job based on last job's run_at time using the run_interval parameter" do
-      Delayed::Worker.run_interval = 60
-      
-      "string".send_later :count
-      "string".send_later :count
-      
-      Delayed::Job.count.should == 2
-      
-      job1 = Delayed::Job.find(:first)
-      job2 = Delayed::Job.find(:last)
-      
-      (job2.run_at - job1.run_at).should == Delayed::Worker.run_interval
-      
-      Delayed::Worker.run_interval = 0
     end
   end
 

@@ -17,7 +17,11 @@ ActiveRecord::Schema.define do
     table.datetime :failed_at
     table.timestamps
   end
-
+  
+  create_table :delayed_jobs_meta, :force => true do |table|
+    table.datetime :last_run_at
+  end
+  
   create_table :stories, :force => true do |table|
     table.string :text
   end

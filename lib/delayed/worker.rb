@@ -126,11 +126,16 @@ module Delayed
       self.run_interval.seconds.since(self.run_time_of_last_job) unless self.run_time_of_last_job.nil?
     end
     
+    # Returns nil if no conditions are met
     def self.run_time_of_last_job
-      if Delayed::Job.count > 0
+      if Delayed::Meta.first.present?
+        last_run_at = Delayed::Meta.first.last_run_at
+        
+        if (last_run_at + self.run_interval) > Delayed::Job.db_time_now
+          last_run_at
+        end
+      elsif Delayed::Job.count > 0
         Delayed::Job.last.run_at
-      else
-        Delayed::Meta.find(:first).last_run_at
       end
     end
     
