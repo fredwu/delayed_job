@@ -94,7 +94,7 @@ module Delayed
       end
       
       def set_last_run_at_meta
-        if meta = Delayed::Meta.find(:last)
+        if meta = Delayed::Meta.last
           meta.update_attributes(:last_run_at => self.run_at)
         else
           Delayed::Meta.create(:last_run_at => self.run_at)
