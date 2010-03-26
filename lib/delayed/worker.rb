@@ -28,10 +28,14 @@ module Delayed
     def self.backend=(backend)
       if backend.is_a? Symbol
         require "delayed/backend/#{backend}"
-        backend = "Delayed::Backend::#{backend.to_s.classify}::Job".constantize
+        backend_job  = "Delayed::Backend::#{backend.to_s.classify}::Job".constantize
+        backend_meta = "Delayed::Backend::#{backend.to_s.classify}::Meta".constantize
       end
-      @@backend = backend
-      silence_warnings { ::Delayed.const_set(:Job, backend) }
+      @@backend = backend_job
+      silence_warnings do
+        ::Delayed.const_set(:Job, backend_job)
+        ::Delayed.const_set(:Meta, backend_meta)
+      end
     end
 
     def initialize(options={})
@@ -119,7 +123,15 @@ module Delayed
     end
     
     def self.run_at_set_interval
-      self.run_interval.seconds.since(Delayed::Job.last.run_at) if Delayed::Job.count > 0
+      self.run_interval.seconds.since(self.run_time_of_last_job) unless self.run_time_of_last_job.nil?
+    end
+    
+    def self.run_time_of_last_job
+      if Delayed::Job.count > 0
+        Delayed::Job.last.run_at
+      else
+        Delayed::Meta.find(:first).last_run_at
+      end
     end
     
     # Reschedule the job in the future (when a job fails).

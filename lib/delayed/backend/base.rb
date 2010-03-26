@@ -92,6 +92,14 @@ module Delayed
       def set_default_run_at
         self.run_at ||= self.class.db_time_now
       end
+      
+      def set_last_run_at_meta
+        if meta = Delayed::Meta.find(:last)
+          meta.update_attributes(:last_run_at => self.run_at)
+        else
+          Delayed::Meta.create(:last_run_at => self.run_at)
+        end
+      end
     
     end
   end

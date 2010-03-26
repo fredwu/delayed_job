@@ -17,6 +17,10 @@ end
 module Delayed
   module Backend
     module ActiveRecord
+      class Meta < ::ActiveRecord::Base
+        include Delayed::Backend::Base
+        set_table_name :delayed_jobs_meta
+      end
       # A job object that is persisted to the database.
       # Contains the work object as a YAML field.
       class Job < ::ActiveRecord::Base
@@ -24,6 +28,7 @@ module Delayed
         set_table_name :delayed_jobs
         
         before_save :set_default_run_at
+        before_save :set_last_run_at_meta
 
         named_scope :ready_to_run, lambda {|worker_name, max_run_time|
           {:conditions => ['(run_at <= ? AND (locked_at IS NULL OR locked_at < ?) OR locked_by = ?) AND failed_at IS NULL', db_time_now, db_time_now - max_run_time, worker_name]}

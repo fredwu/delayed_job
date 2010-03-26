@@ -19,6 +19,11 @@ end
 module Delayed
   module Backend
     module MongoMapper
+      class Meta
+        include MongoMapper::Document
+        include Delayed::Backend::Base
+        set_collection_name 'delayed_jobs_meta'
+      end
       class Job
         include ::MongoMapper::Document
         include Delayed::Backend::Base
@@ -35,6 +40,7 @@ module Delayed
         timestamps!
         
         before_save :set_default_run_at
+        before_save :set_last_run_at_meta
 
         ensure_index [[:priority, 1], [:run_at, 1]]
         
