@@ -55,8 +55,8 @@ module Delayed
       
       # Unlock this job (note: not saved to DB)
       def unlock
-        self.locked_at    = nil
-        self.locked_by    = nil
+        self.locked_at = nil
+        self.locked_by = nil
       end
       
     private
