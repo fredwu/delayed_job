@@ -28,13 +28,13 @@ module Delayed
     def self.backend=(backend)
       if backend.is_a? Symbol
         require "delayed/backend/#{backend}"
-        backend_job  = "Delayed::Backend::#{backend.to_s.classify}::Job".constantize
         backend_meta = "Delayed::Backend::#{backend.to_s.classify}::Meta".constantize
+        backend      = "Delayed::Backend::#{backend.to_s.classify}::Job".constantize
       end
-      @@backend = backend_job
+      @@backend = backend
       silence_warnings do
-        ::Delayed.const_set(:Job, backend_job)
         ::Delayed.const_set(:Meta, backend_meta)
+        ::Delayed.const_set(:Job, backend)
       end
     end
 
